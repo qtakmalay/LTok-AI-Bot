@@ -13,10 +13,10 @@ website_texts = {}
 website_embeddings = {}
 
 def initialize_agent():
+    global website_texts
     if os.path.exists(settings.WEBSITE_TEXTS_FILE_PATH):
         print("Website texts file found. Loading website texts...")
         with open(settings.WEBSITE_TEXTS_FILE_PATH, "rb") as file:
-            global website_texts
             website_texts = pickle.load(file)
     else:
         print("No website texts file found. Extracting texts from websites...")
@@ -35,13 +35,17 @@ def initialize_agent():
     website_embeddings = load_or_create_embeddings(website_texts)
 
 def answer_question(question):
+    global website_texts, website_embeddings
+
     question_embedding = get_embedding(question)
     
     best_similarity = -1
+    top_similarities = {}
     best_url = None
     for url, embedding in website_embeddings.items():
         similarity = cosine_similarity(question_embedding, embedding)
         print(f"Similarity with {url}: {similarity}")
+        top_similarities[url] = similarity
         if similarity > best_similarity:
             best_similarity = similarity
             best_url = url
@@ -49,19 +53,39 @@ def answer_question(question):
     if best_url is None:
         return "No relevant website found."
 
+    sorted_similarities = sorted(top_similarities.items(), key=lambda x: x[1], reverse=True)
+    top3 = sorted_similarities[:3]
+    print("Top 3 Similarities:")
+    for url, sim in top3:
+        print(f"{url}: {sim}")
+
     context = website_texts[best_url]
+    
+    extra_info = ""
+    if os.path.exists(settings.TEXT_PATH):
+        with open(settings.TEXT_PATH, "r", encoding="utf-8") as file:
+            extra_info = file.read()
+    else:
+        print("Additional info file not found at:", settings.TEXT_PATH)
+    
     prompt = (
         f"Using the following website content as context:\n\n"
         f"{context}\n\n"
-        f"Answer the following question:\n{question}\n"
+        f"Additional Information:\n\n"
+        f"{extra_info}\n\n"
+        f"Please answer the question below in a detailed, descriptive, and professional manner. "
+        f"Ensure the response is clear, comprehensive, and includes all relevant information from the context.\n\n"
+        f"Question: {question}\n"
     )
     print(f"Using content from: {best_url}")
 
-    response = client.completions.create(
-        model="gpt-3.5-turbo-instruct",
-        prompt=prompt,
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "user", "content": prompt}
+        ],
         max_tokens=200,
         temperature=0.3,
     )
-    answer = response.choices[0].text.strip()
+    answer = response.choices[0].message.content.strip()
     return answer
