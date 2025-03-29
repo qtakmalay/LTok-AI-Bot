@@ -38,8 +38,6 @@ async def send_help(message: types.Message):
         "You can interact with the LATOKEN Talent Bot through text commands or by using the menu buttons. Here’s how to get started:\n\n"
         "• Ask Questions: Simply type your question to inquire about LATOKEN’s hackathon schedule, company mission, culture, and more.\n"
         "• Commands: Use /start to see the welcome message again or /help to view these instructions.\n"
-        "• Menu Navigation: Use the provided menu options to explore various topics about LATOKEN.\n"
-        "• Getting Answers: The bot uses LATOKEN’s official talent materials and knowledge base to provide detailed, professional responses.\n\n"
         "If you need further assistance, just ask!"
     )
     await message.answer(help_text)

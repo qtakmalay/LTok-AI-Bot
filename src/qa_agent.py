@@ -84,7 +84,6 @@ def answer_question(question):
         messages=[
             {"role": "user", "content": prompt}
         ],
-        max_tokens=200,
         temperature=0.3,
     )
     answer = response.choices[0].message.content.strip()
